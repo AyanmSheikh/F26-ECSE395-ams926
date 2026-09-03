@@ -22,6 +22,8 @@
 ## 8/27 Received Stakeholder Assignment
 - Our team received our #1 choice Don Fong [Birdfeeder]
 - I drafted the email with all availible details (scored 6/10 with one retry attempt)
+- Our team email stakeholder on 8/31 after scoring 10/10
+![Stakeholder Email Screenshot](../Images/stakeholder_email.png)
 
 ## 8/28 Completed ECSE Lab1 GitHub and Markdown Basic
 - Emmett Completed the Stakeholder email with everyones availibility (except for Josephs)
