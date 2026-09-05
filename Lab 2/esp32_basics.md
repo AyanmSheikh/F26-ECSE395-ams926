@@ -19,7 +19,6 @@
 
 [x] Low 
 
-
 [ ] Medium 
 
 [ ] High
