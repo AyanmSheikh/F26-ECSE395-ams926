@@ -1,4 +1,4 @@
-# ECSE Week 1 Project Log
+# ECSE Week 2 Project Log
 
 ## 8/31 Attended Needfinding lecture
 
