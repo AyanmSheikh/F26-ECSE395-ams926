@@ -1,13 +1,13 @@
 #include <Arduino.h>
 
 // function prototype
-int voltage(float analogvalue);
+float voltage(float analogvalue);
 
 // Put your potentiometer pin assignment here
-const int sensorPin = 0;
-
+const int sensorPin = A1; // ams926 this assigns IO pin of potentiometer to A1
+/*
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(115200); // ams926 begin serial comm with hardcoded baud
 }
 
 void loop() {
@@ -15,11 +15,9 @@ void loop() {
     Serial.println(voltage(analogRead(sensorPin)));
     delay(50); 
 }
-
+*/
 // function to calculate output voltage
-int voltage(float analogvalue){
-    int voltage;
-    //analogRead(sensorPin); gives us 0-4095 values
-    //use the formula (Analog value*Reference voltage) / (Sensor Resolution) to calculate the output voltage
-    return voltage;
+float voltage(float analogvalue){
+    return (analogvalue * 3.3) / 4095; // ams926 this returns the calculated voltage value
 }
+    
