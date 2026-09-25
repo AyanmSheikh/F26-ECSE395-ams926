@@ -108,15 +108,15 @@ The code's direction names are assumptions based on the intended wiring; confirm
 
 ### Touch Sensor Circuit
 
-![Touch sensor circuit setup](../media/touch_circuit.jpg)
+![Touch sensor circuit setup](./media/touch_circuit.jpg)
 
 ### TT Motor Circuit
 
-![TT motor and motor-driver circuit setup](../media/ttmotor_circuit.jpg)
+![TT motor and motor-driver circuit setup](./media/ttmotor_circuit.jpg)
 
 ### Power Supply
 
-![Power supply used for the motor circuit](../media/power_supply.jpg)
+![Power supply used for the motor circuit](./media/power_supply.jpg)
 
 ## Time Reporting and Reflection
 
