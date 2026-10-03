@@ -15,3 +15,4 @@ this table of contents, along with a brief description of what is included
 | [Week 3](Week3.md)| No class monday, guest lecturer on engineering standards, playing with sensors lab and internal team meeting to go over responsibilities and potential project directions                                                     |
 | [Week 4](Week4.md)| Brainstorming lecture plus Functional/Technical Specs, Needfining PResentation, Playing with servos and motors lab                               |
 | [Week 5](Week5.md)| Lab 4 debrief and Lab 5 tips, modularity vs integrability, system architecture, verification and validation, Feedback meeting with stakeholder, Sensors and actuator lab                               |
+| [Week 6](Week6.md)| Concept Selection and Gantt chart. Analytical/Empirical/Summative/Formative Heuristics, UI//UX, Independent Lab time                         |
