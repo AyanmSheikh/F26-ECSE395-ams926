@@ -1,4 +1,4 @@
-# ECSE Week 5 Project Log
+# ECSE Week 6 Project Log
 
 ## 9/28 Work on Concept Selection and Gantt Chart
 - Analytical vs Empirical Evaluation
