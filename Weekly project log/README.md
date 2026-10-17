@@ -5,6 +5,10 @@ semester project. This will serve as a table of contents for your project throug
 out the semester. Each additional week’s Markdown file should be referenced in
 this table of contents, along with a brief description of what is included
 
+# Current Gantt Progress
+
+[Gantt Chart V2](<../media/Semester Gantt (with revision history)-1.xlsx>)
+
 # Table of Content
 
 
