@@ -17,3 +17,4 @@ this table of contents, along with a brief description of what is included
 | [Week 5](Week5.md)| Lab 4 debrief and Lab 5 tips, modularity vs integrability, system architecture, verification and validation, Feedback meeting with stakeholder, Sensors and actuator lab                               |
 | [Week 6](Week6.md)| Concept Selection and Gantt chart. Analytical/Empirical/Summative/Formative Heuristics, UI//UX, Independent Lab time                         |
 | [Week 7](Week7.md)| System Archetecture and Prototype Submission, Stats Analysis for verification/validation, Hypotehesis (t-test) testing, Friday Lab Check In                      |
+| [Week 8](Week8.md)|                       |
