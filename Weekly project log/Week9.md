@@ -2,6 +2,7 @@
 - **Shortened week due to fall break**
 ## 10/21
 - Attended the Kevin Kranzusch Distinguished Lecture 
+
 ## 10/22 
 - Held team meeting
 
