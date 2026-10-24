@@ -22,3 +22,4 @@ this table of contents, along with a brief description of what is included
 | [Week 6](Week6.md)| Concept Selection and Gantt chart. Analytical/Empirical/Summative/Formative Heuristics, UI//UX, Independent Lab time                         |
 | [Week 7](Week7.md)| System Archetecture and Prototype Submission, Stats Analysis for verification/validation, Hypotehesis (t-test) testing, Friday Lab Check In                      |
 | [Week 8](Week8.md)| In lab testing, finishing prototypes 1, and 2, starting 3.  Verification and Validation Plan submittal, lab check in, brainstorming, architecture, and gantt chart resubmissions                   |
+| [Week 9](Week9.md)| Shortened week, worked on prototypes 1,2,3 dicussed presentation logistics, held team meeting                   |
