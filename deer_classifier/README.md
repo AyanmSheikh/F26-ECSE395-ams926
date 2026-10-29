@@ -2,6 +2,45 @@
 
 For continuation context, file inventory, current training results, and next steps, see [HANDOFF.md](HANDOFF.md).
 
+## First milestone: printed-deer camera smoke test
+
+Use the standalone [ESP-IDF camera test](firmware/smoke_test/README.md) for the
+confirmed Adafruit ESP32-S3 TFT Feather and Adafruit OV5640 breakout. It embeds
+the existing 499,712-byte int8 model, captures QVGA JPEG, converts to RGB, runs
+224 × 224 inference locally, and prints `DEER_DETECTED` after two confident
+frames in a three-frame window. Removing the print produces `DEER_CLEARED`.
+Per-frame scores, timings, memory and failures appear on USB serial. The guide
+includes a proposed complete wiring map and an opt-in configuration profile.
+
+No device is connected to this Windows computer, so the physical test remains
+pending. The retained model is experimental; no new training or accuracy
+measurement has been performed here. This checkout has no `.pt` checkpoints
+or training images from the previous Mac. Restore them to improve the existing
+model, or rebuild the dataset and fine-tune a fresh upstream checkpoint.
+
+After wiring, configuring and flashing the test, close other serial monitors
+and run from this folder with Python and pyserial installed:
+
+```powershell
+python -m pip install -r requirements-smoke.txt
+python smoke_check.py --port COM5
+```
+
+The recorder guides an empty-background → printed-deer → empty-background test,
+discards three settling frames per phase, measures ten frames per phase, and
+saves all serial evidence to `artifacts/smoke/`. It reads continuously while
+you change the scene, so errors and resets are retained. A pass requires no
+confirmed deer on either empty phase and at least two confirmed frames with
+the deer print. It fails on missing frames, invalid scores, gate inconsistency,
+errors, resets or incomplete phases. Repeat with different deer and non-deer
+prints before proceeding to deterrence and photo-capture integration.
+
+Host checks use no ML dependencies:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
 The target is the Adafruit ESP32-S3 TFT Feather (4 MB flash, 2 MB PSRAM) with the Adafruit OV5640 camera, powered from a 3.7 V LiPo. The embedded path in this folder uses Espressif's ESPDet-Pico detector and ESP-DL export, then turns repeated deer detections into a stable deer-present signal. Detecting a deer region in the frame is more suitable for the requested broad view than classifying the whole frame: birds and background can remain in view without turning the whole image into one scene label.
 
 The upstream ESPDet-Pico cat example reports 0.36 M parameters at 224 × 224 and 126.2 ms on an ESP32-S3. That is an upstream benchmark, not a measurement on this camera/board/battery setup. It is a useful starting point for testing. Adafruit's OV5640 breakout has a 5 MP sensor. For this 2 MB PSRAM board, begin with VGA (640 × 480) capture and resize/letterbox into the model input; only use 2 MP capture if the camera can deliver JPEG or stream-resize it without allocating a full-resolution RGB frame. Benchmark the complete camera-to-result path and average battery current on the actual hardware.
@@ -60,21 +99,43 @@ python train_embedded.py \
   --python "$(which python)" \
   --dataset datasets/deer \
   --pretrained ../esp-detection/examples/cat_detection/espdet_pico_224_224_cat.pt \
-  --device mps \
-  --output artifacts/deer.espdl
+  --device auto \
+  --output artifacts/deer_candidate.espdl
 ```
 
-The wrapper caps the run at 30 epochs with early stopping rather than using the upstream entry point's 1,200-epoch default. It uses AdamW at 0.0005 with a half-epoch warmup to fine-tune the small pretrained detector gently; override with `--optimizer`, `--learning-rate`, and `--warmup-epochs` as needed. Use `--device cpu` if PyTorch MPS is unavailable. Train at 224 × 224 first; only increase input size if real scene distance shows that deer are too small and the added latency, memory, and energy fit the budget. The per-frame score for the temporal gate is the maximum deer-box confidence (zero if no deer box is returned), not a calibrated probability. Record model size, validation precision/recall, per-frame latency, and battery current before choosing the deployment threshold.
+The wrapper caps the run at 30 epochs with early stopping rather than using the upstream entry point's 1,200-epoch default. It uses AdamW at 0.0005 with a half-epoch warmup; override with `--optimizer`, `--learning-rate`, and `--warmup-epochs`. The default `--device auto` chooses CUDA, MPS or CPU on the training interpreter. Each run has a new directory; `--run-name` names it explicitly and refuses reuse. `--patience`, `--workers` (default 0 for Windows) and `--seed` are exposed. Train at 224 × 224 first; the smoke firmware validates that exact input contract.
+
+An existing output model is protected unless `--overwrite-output` is supplied.
+Training and quantization stage their results within the run directory before
+publishing a successful export. `deer_run.json` records source/checkpoint
+hashes, dependency versions, upstream revision, settings and export hash.
+Evaluate a candidate before deliberately replacing `artifacts/deer.espdl`.
+The per-frame score is a maximum box confidence, not a calibrated probability.
 
 To re-export a saved checkpoint without retraining, use `export_embedded.py` with its `best.pt` and the training images for int8 calibration. The deployable output is `artifacts/deer.espdl`.
 
-To get final held-out metrics, run `evaluate_checkpoint.py` on the saved `best.pt` (and optionally `last.pt`). It uses a longer NMS time budget so every validation batch can finish on the training host.
+To obtain clean held-out metrics after restoring checkpoints and data:
+
+```powershell
+python evaluate_checkpoint.py --esp-detection ../esp-detection --checkpoint artifacts/YOUR_RUN/weights/best.pt --data artifacts/YOUR_RUN_dataset.yaml --device cpu --batch-size 1 --output artifacts/candidate_evaluation.json
+```
+
+The evaluator reports box mAP and image-level precision, recall, false-positive
+rate and missed-deer rate at 0.25, 0.50, 0.70, 0.85 and 0.95. It saves per-image
+scores and evaluator settings and rejects truncated NMS, missing/stale labels
+and excluded samples. These are float-checkpoint results; they do not validate
+the quantized artifact or temporal behavior on real ordered camera frames.
 
 ## Multi-frame trigger
 
 [`temporal_gate.hpp`](temporal_gate.hpp) is the firmware-side, allocation-free 2-of-3 frame gate with an 0.85 deer-confidence threshold. Pass the maximum class-0 deer-box score from each frame (or zero when no deer box is present); an invalid camera/inference frame clears history so stale positives cannot trigger the response. `temporal_gate.py` provides the same policy for host-side integration. Keep the response off for uncertain or failed results. The 2-of-3 and 0.85 values are starting defaults to tune against the false-alarm/missed-deer tradeoff, not validated product limits.
 
-[`firmware/deer_presence.hpp`](firmware/deer_presence.hpp) connects the ESP-DL detector results to that gate. It expects Espressif's generated `ESPDetDetect` model component and a decoded RGB frame; the OV5640 capture/decode driver remains part of the board firmware.
+[`firmware/smoke_test`](firmware/smoke_test/README.md) supplies the standalone
+OV5640 camera path and loads the raw retained model directly. The older
+[`firmware/deer_presence.hpp`](firmware/deer_presence.hpp) is a separate adapter
+requiring Espressif's generated `ESPDetDetect` component; it is not used by the
+standalone test. Both use the shared temporal gate. Camera/inference failures
+and invalid C++ scores clear history.
 
 ## Remaining measurements
 

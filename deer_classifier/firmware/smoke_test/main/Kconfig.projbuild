@@ -1,0 +1,118 @@
+menu "Deer camera smoke test"
+
+config DEER_PINS_CONFIRMED
+    bool "I have entered and checked my actual OV5640 DVP wiring"
+    default n
+    help
+        The Feather has no fixed camera connector pin map. Leave this off until
+        all GPIO numbers below match the real wiring. The app refuses capture
+        with this option off. Use MCU GPIO numbers, not Feather labels A0 etc.
+
+config DEER_PIN_XCLK
+    int "Camera XCLK GPIO"
+    range -1 48
+    default -1
+config DEER_PIN_SDA
+    int "Camera SCCB SDA / SIOD GPIO"
+    range -1 48
+    default -1
+config DEER_PIN_SCL
+    int "Camera SCCB SCL / SIOC GPIO"
+    range -1 48
+    default -1
+config DEER_PIN_D0
+    int "Camera D0 GPIO (OV5640 Y2)"
+    range -1 48
+    default -1
+config DEER_PIN_D1
+    int "Camera D1 GPIO (OV5640 Y3)"
+    range -1 48
+    default -1
+config DEER_PIN_D2
+    int "Camera D2 GPIO (OV5640 Y4)"
+    range -1 48
+    default -1
+config DEER_PIN_D3
+    int "Camera D3 GPIO (OV5640 Y5)"
+    range -1 48
+    default -1
+config DEER_PIN_D4
+    int "Camera D4 GPIO (OV5640 Y6)"
+    range -1 48
+    default -1
+config DEER_PIN_D5
+    int "Camera D5 GPIO (OV5640 Y7)"
+    range -1 48
+    default -1
+config DEER_PIN_D6
+    int "Camera D6 GPIO (OV5640 Y8)"
+    range -1 48
+    default -1
+config DEER_PIN_D7
+    int "Camera D7 GPIO (OV5640 Y9)"
+    range -1 48
+    default -1
+config DEER_PIN_VSYNC
+    int "Camera VSYNC GPIO"
+    range -1 48
+    default -1
+config DEER_PIN_HREF
+    int "Camera HREF GPIO"
+    range -1 48
+    default -1
+config DEER_PIN_PCLK
+    int "Camera PCLK GPIO"
+    range -1 48
+    default -1
+config DEER_PIN_PWDN
+    int "Camera PWDN GPIO (-1 if tied inactive on breakout)"
+    range -1 48
+    default -1
+config DEER_PIN_RESET
+    int "Camera RESET GPIO (-1 if tied inactive on breakout)"
+    range -1 48
+    default -1
+
+config DEER_THRESHOLD_PERCENT
+    int "Deer gate confidence threshold (percent)"
+    range 10 100
+    default 85
+    help
+        Diagnostic starting value, not a validated product threshold. The
+        serial log also reports lower scores to help diagnose misses.
+
+config DEER_FRAME_INTERVAL_MS
+    int "Pause after each inference (milliseconds)"
+    range 0 10000
+    default 250
+
+config DEER_CAMERA_VGA
+    bool "Use VGA JPEG instead of QVGA (requires more free memory)"
+    default n
+
+config DEER_CAMERA_XCLK_MHZ
+    int "External camera XCLK frequency (MHz)"
+    range 6 27
+    default 20
+    help
+        20 MHz follows Espressif's camera-driver default. Adafruit documents
+        a nominal 24 MHz external clock. Keep the breakout clock jumper at
+        EXT when the MCU drives XCLK. Confirm capture on the real unit.
+
+config DEER_CAMERA_HMIRROR
+    bool "Mirror the camera image horizontally"
+    default n
+
+config DEER_CAMERA_VFLIP
+    bool "Flip the camera image vertically"
+    default n
+
+config DEER_RUN_MODEL_SELFTEST
+    bool "Run ESP-DL embedded input/output test vectors at boot"
+    default n
+    help
+        Enable only when the exported model contains test inputs and outputs.
+        A failed test stops startup. Passing verifies tensor execution, not
+        deer recognition or the camera image path.
+
+endmenu

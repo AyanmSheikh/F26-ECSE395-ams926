@@ -26,6 +26,7 @@ class TemporalDeerGate:
             self._detections.clear()
             return False
         if not 0.0 <= deer_confidence <= 1.0:
+            self._detections.clear()
             raise ValueError("deer_confidence must be in [0, 1]")
         self._detections.append(deer_confidence >= self.threshold)
         return sum(self._detections) >= self.required

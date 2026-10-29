@@ -50,13 +50,15 @@ def main() -> None:
     args = parser.parse_args()
     if not args.archive.is_file():
         parser.error(f"archive not found: {args.archive}")
+    # Resolve before changing directory: the documented CLI accepts a relative ZIP.
+    archive_path = args.archive.resolve()
     args.out.mkdir(parents=True, exist_ok=True)
     import os
 
     previous = Path.cwd()
     try:
         os.chdir(args.out.resolve())
-        with zipfile.ZipFile(args.archive) as archive:
+        with zipfile.ZipFile(archive_path) as archive:
             train_counts = copy_split(archive, "train")
             validation_counts = copy_split(archive, "valid")
     except zipfile.BadZipFile as error:

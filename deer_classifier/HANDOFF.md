@@ -1,5 +1,74 @@
 # Deer classifier handoff
 
+## Continuation on Windows — October 29, 2026
+
+The user confirmed **Adafruit ESP32-S3 TFT Feather** and the **Adafruit OV5640
+parallel camera breakout**, linking the manufacturer guides. No board is
+connected to this computer. Immediate acceptance is a printed-deer camera
+smoke test with serial output; sound/light deterrence and photo capture remain
+later milestones.
+
+Only `artifacts/deer.espdl` survived in this checkout. The original Mac's
+dataset, `.pt` checkpoints and temporary Python/ESP-Detection environments are
+absent here. **No new training, held-out model evaluation or physical test has
+been performed on Windows.** Do not interpret the new host software tests as
+model accuracy or hardware success. The historical results below still apply.
+
+Implemented continuation:
+
+- `firmware/smoke_test/`: standalone ESP-IDF app, pinned ESP-DL 3.3.14 and
+  esp32-camera 2.1.3, QVGA JPEG → RGB888 → centered 224² letterbox114 → int8
+  ESPDet. Weights remain in flash. USB serial prints BOOT/hash, gate/inference
+  checks, READY, FRAME scores/timing/PSRAM and DEER_DETECTED/DEER_CLEARED.
+- `sdkconfig.feather_ov5640.defaults`: proposed wiring for the confirmed boards.
+  Follow the firmware README and check actual wires; the normal configuration
+  leaves camera pins unconfirmed and intentionally stops before capture.
+- `smoke_check.py`: continuous serial recorder and guided blank/deer/blank
+  protocol, with replayable JSONL evidence and strict failure handling.
+- `evaluate_checkpoint.py` and `image_metrics.py`: one held-out validation pass
+  reports detector mAP and image-level confusion at multiple thresholds,
+  including 0.85. Rejects NMS truncation, dropped samples, stale/missing labels,
+  invalid scores and non-deer checkpoints. Requires restored `.pt`/dataset.
+- Training/export now default to automatic device selection, preserve unique
+  run directories and provenance, protect existing output models, and stage
+  quantization before publishing. Use `artifacts/deer_candidate.espdl` for a
+  new candidate. The old warning below about automatic run overwrites is
+  historical; it no longer describes the current scripts.
+- Fixed `prepare_dataset.py` resolving a relative archive after changing cwd.
+  Added focused host tests for metrics, export safety, preparation and smoke
+  evidence. Run `python -m unittest discover -s tests -v` from this folder.
+
+The retained artifact remains exactly 499,712 bytes, SHA-256
+`f4baa40014b3b5476e05e5007ab6e83a1a19bdc680c12dba86761841e02fc450`.
+Read-only parsing using the downloaded ESP-DL schema verified one INT8 NHWC
+input `[1,224,224,3]` and INT8 score/box outputs at 28², 14², 7² with one deer
+channel and four box channels. It has **no embedded golden input/output
+vectors**, so `Model::test()` cannot establish numerical equivalence.
+Firmware's synthetic-frame inference check only verifies successful execution
+and finite scores; it does not verify recognition.
+
+ESP-IDF 5.4.2 and its compiler are installed locally in ignored `.tools/`.
+`firmware/smoke_test/idf-local.ps1` runs that installation. Bundled host Python:
+`C:/Users/ayanl/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe`.
+It lacks torch/Ultralytics; the separate local IDF Python environment contains
+pyserial. Build records live in `.tools/smoke-build.log` and
+`.tools/smoke-configured-build.log`. A configured compile-only build uses an
+ignored sdkconfig under `.tools/`, separate from the unconfirmed normal config.
+No device was flashed. Both the normal unconfigured build and the full camera
+and model configured build passed with ESP-IDF 5.4.2. The configured binary is
+1,853,456 bytes (about 1.77 MiB), leaving 55% of the application partition free.
+This measures flash usage, not runtime PSRAM headroom. All 25 host unit tests
+pass. The configured build embeds the unchanged model; startup hardware and
+recognition checks have not run.
+
+Next: wire and connect the physical unit,
+configure/flash, run `smoke_check.py --port COMx`, and use observed scores to
+decide whether the experimental candidate can pass the print check. Restore
+training data/checkpoints for quantitative improvements. Do not claim the
+physical milestone passed until there is a real passing serial evidence log.
+
+## Historical Mac handoff
+
 This document captures the current implementation and the work needed to continue it. The next model should read this file and `README.md`, inspect the source files listed below, then continue improving and validating the model. **Do not treat the current checkpoint as product-ready:** its validation results are weak and the real camera view has not been tested.
 
 ## User goal and hardware

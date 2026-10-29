@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
+
+from training_utils import new_run_name, validate_run_name, validate_settings
 
 
 def main() -> None:
@@ -29,7 +32,13 @@ def main() -> None:
                         help="Initial LR (used with a named optimizer; auto chooses its own LR)")
     parser.add_argument("--warmup-epochs", type=float, default=0.5,
                         help="Warmup duration in epochs")
-    parser.add_argument("--device", default="mps", help="Ultralytics device, e.g. mps or cpu")
+    parser.add_argument("--device", default="auto", help="auto selects CUDA, MPS, then CPU on the training host")
+    parser.add_argument("--run-name", default=None, help="Unique run directory name (default: UTC timestamp)")
+    parser.add_argument("--patience", type=int, default=8)
+    parser.add_argument("--workers", type=int, default=0, help="Data-loader workers; 0 is portable on Windows")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--overwrite-output", action="store_true",
+                        help="Replace an existing deployed model only after a successful export")
     args = parser.parse_args()
 
     repo = args.esp_detection.resolve()
@@ -40,8 +49,17 @@ def main() -> None:
         parser.error(f"Python interpreter not found: {args.python}")
     if not (repo / "train.py").is_file() or not (repo / "deploy/quantize.py").is_file():
         parser.error(f"ESP-Detection checkout is incomplete: {repo}")
-    if args.epochs < 1 or args.batch_size < 1:
-        parser.error("--epochs and --batch-size must be positive")
+    run_name = args.run_name or new_run_name()
+    try:
+        validate_run_name(run_name)
+        validate_settings(args.size, args.epochs, args.batch_size, args.patience,
+                          args.workers, args.learning_rate, args.warmup_epochs)
+    except ValueError as error:
+        parser.error(str(error))
+    if args.output.exists() and not args.overwrite_output:
+        parser.error(f"model already exists: {args.output}; choose --output artifacts/candidate.espdl or explicitly --overwrite-output")
+    if (args.output.parent / run_name).exists():
+        parser.error(f"run directory already exists: {args.output.parent / run_name}; choose a new --run-name")
     for folder in (dataset / "images/train", dataset / "images/val",
                    dataset / "labels/train", dataset / "labels/val"):
         if not folder.is_dir():
@@ -51,14 +69,15 @@ def main() -> None:
     if not calib_data.is_dir():
         parser.error(f"calibration image folder not found: {calib_data}")
 
-    config = args.output.parent / "deer_dataset.yaml"
+    config = args.output.parent / f"{run_name}_dataset.yaml"
     config.parent.mkdir(parents=True, exist_ok=True)
-    config.write_text(
-        f"path: {dataset.as_posix()}\n"
-        "train: images/train\n"
-        "val: images/val\n"
-        "names:\n  0: deer\n"
-    )
+    with config.open("x", encoding="utf-8") as stream:
+        stream.write(
+            f"path: {json.dumps(dataset.as_posix())}\n"
+            "train: images/train\n"
+            "val: images/val\n"
+            "names:\n  0: deer\n"
+        )
     command = [
         str(args.python.resolve()), str(runner),
         "--esp-detection", str(repo),
@@ -71,7 +90,13 @@ def main() -> None:
         "--batch", str(args.batch_size),
         "--optimizer", args.optimizer,
         "--device", args.device,
+        "--run-name", run_name,
+        "--patience", str(args.patience),
+        "--workers", str(args.workers),
+        "--seed", str(args.seed),
     ]
+    if args.overwrite_output:
+        command.append("--overwrite-output")
     command += ["--learning-rate", str(args.learning_rate)]
     command += ["--warmup-epochs", str(args.warmup_epochs)]
     print("Running:", " ".join(command))
