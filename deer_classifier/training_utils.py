@@ -24,7 +24,8 @@ def validate_run_name(name: str) -> None:
         raise ValueError("--run-name must contain only letters, digits, underscores, and hyphens")
 
 
-def validate_settings(size, epochs, batch, patience, workers, learning_rate, warmup_epochs) -> None:
+def validate_settings(size, epochs, batch, patience, workers, learning_rate, warmup_epochs, *,
+                      warmup_bias_lr=0.0, mosaic=0.2, scale=0.25, cache="none", close_mosaic=10) -> None:
     if any(value <= 0 or value % 32 for value in size):
         raise ValueError("--size dimensions must be positive multiples of 32")
     if epochs < 1 or batch < 1 or patience < 0 or workers < 0:
@@ -33,6 +34,15 @@ def validate_settings(size, epochs, batch, patience, workers, learning_rate, war
         raise ValueError("--learning-rate must be finite and positive")
     if not math.isfinite(warmup_epochs) or warmup_epochs < 0:
         raise ValueError("--warmup-epochs must be finite and nonnegative")
+    if not math.isfinite(warmup_bias_lr) or warmup_bias_lr < 0:
+        raise ValueError("--warmup-bias-lr must be finite and nonnegative")
+    for option, value in (("--mosaic", mosaic), ("--scale", scale)):
+        if not math.isfinite(value) or not 0 <= value <= 1:
+            raise ValueError(f"{option} must be finite and in [0, 1]")
+    if close_mosaic < 0:
+        raise ValueError("--close-mosaic must be nonnegative")
+    if cache not in {"none", "ram", "disk"}:
+        raise ValueError("--cache must be none, ram, or disk")
 
 
 def select_device(requested: str, torch_module=None) -> str:

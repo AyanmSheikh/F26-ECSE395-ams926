@@ -85,5 +85,8 @@ def summarize_presence(rows: list[dict], thresholds: list[float]) -> list[dict]:
             "false_positive_rate": ratio(fp, fp + tn),
             "missed_deer_rate": ratio(fn, tp + fn),
             "accuracy": ratio(tp + tn, len(rows)),
+            "specificity": ratio(tn, tn + fp),
+            "balanced_accuracy": ((tp / (tp + fn) + tn / (tn + fp)) / 2
+                                  if tp + fn and tn + fp else None),
         })
     return summaries

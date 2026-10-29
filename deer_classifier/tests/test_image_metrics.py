@@ -23,13 +23,14 @@ class PresenceMetricsTests(unittest.TestCase):
         result = summarize_presence(rows, [0.85])[0]
         for name in ("true_positive", "false_negative", "false_positive", "true_negative"):
             self.assertEqual(result[name], 1)
-        for name in ("precision", "recall", "false_positive_rate", "missed_deer_rate", "accuracy"):
+        for name in ("precision", "recall", "false_positive_rate", "missed_deer_rate", "accuracy", "specificity", "balanced_accuracy"):
             self.assertEqual(result[name], 0.5)
 
     def test_no_predictions_and_no_negatives_do_not_invent_success_rates(self):
         result = summarize_presence([{"image": "deer", "has_deer": True, "score": 0}], [0.85])[0]
         self.assertIsNone(result["precision"])
         self.assertIsNone(result["false_positive_rate"])
+        self.assertIsNone(result["balanced_accuracy"])
         self.assertEqual(result["missed_deer_rate"], 1)
         json.dumps(result, allow_nan=False)
 

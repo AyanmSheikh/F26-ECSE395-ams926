@@ -91,7 +91,7 @@ There is no OTA or filesystem. The model file's size and SHA-256 are computed
 at build time and printed at boot so a log identifies the actual artifact.
 
 The full proposed-wiring configuration compiled and linked with ESP-IDF 5.4.2
-on Windows. Its application binary is 1,853,456 bytes (about 1.77 MiB),
+on Windows. Its application binary is 1,853,872 bytes (about 1.77 MiB),
 including the unchanged 499,712-byte model, leaving 55% of the application
 partition free. The unconfigured build can optimize out the unreachable camera
 and model path, so its smaller size is not a deployment measurement. Runtime

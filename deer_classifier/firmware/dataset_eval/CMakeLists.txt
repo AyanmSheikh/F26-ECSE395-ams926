@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(deer_dataset_eval)
+if(NOT IDF_TARGET STREQUAL "esp32s3")
+    message(FATAL_ERROR "Dataset evaluation executes the original ESP32-S3 model; select esp32s3.")
+endif()

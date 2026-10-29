@@ -1,0 +1,11 @@
+menu "Deer dataset evaluation"
+
+config DEER_EVAL_HOST_WINDOWS
+    bool "QEMU host uses Windows binary file flag"
+    default y
+    help
+        QEMU's native Xtensa SYS_open passes flags directly to the host open
+        function. Windows requires O_BINARY (0x8000) for arbitrary RGB bytes.
+        Turn this off on Linux/macOS hosts.
+
+endmenu
