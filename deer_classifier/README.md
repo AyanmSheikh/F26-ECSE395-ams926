@@ -13,10 +13,10 @@ Per-frame scores, timings, memory and failures appear on USB serial. The guide
 includes a proposed complete wiring map and an opt-in configuration profile.
 
 No device is connected to this Windows computer, so the physical test remains
-pending. The retained model is experimental; no new training or accuracy
-measurement has been performed here. This checkout has no `.pt` checkpoints
-or training images from the previous Mac. Restore them to improve the existing
-model, or rebuild the dataset and fine-tune a fresh upstream checkpoint.
+pending. The retained model is experimental. A clean PC evaluation of the
+restored float checkpoint missed every held-out deer image at confidence
+0.85; see [EVALUATION.md](EVALUATION.md). The quantized artifact and printed
+camera test still require validation.
 
 After wiring, configuring and flashing the test, close other serial monitors
 and run from this folder with Python and pyserial installed:
@@ -40,6 +40,69 @@ Host checks use no ML dependencies:
 ```powershell
 python -m unittest discover -s tests -v
 ```
+
+## PC evaluation status — October 29, 2026
+
+The isolated CPU environment at repository-root `.tools/espdet311/` now has
+Python 3.11.9, PyTorch 2.2.0+cpu and Ultralytics 8.4.191. ESP-Detection is checked
+out at `.tools/esp-detection/`, revision
+`28de5902a357d99dd9a5db0f52905255641c5a78`; dependency imports are verified.
+The original Mac `best.pt`, `last.pt`, `best.onnx`, training results and prepared
+validation images have been restored from three user-supplied Google Drive
+ZIPs. The completed float-checkpoint pass evaluated all 602 validation images.
+No new training or physical camera test has run, and the retained `.espdl`
+model is unchanged. All 37 host software tests pass; those tests do not measure
+deer recognition. [EVALUATION.md](EVALUATION.md) records the measured results,
+provenance and reproducible settings.
+
+The restored checkpoint is at `artifacts/deer_espdet_pico/weights/best.pt`.
+Validation contains **602 image/label pairs: 517 deer images and 85 negatives**,
+with 703 annotated deer boxes. The original 2,729 training image names were
+audited directly from the ZIP directories: there are no shared camera
+locations or identical filenames between training and validation. Every
+validation image has an explicit matching YOLO label, including an empty
+`.txt` file for a negative. Sixty-five identical Google Drive numbered copies
+were preserved outside the evaluation folders after byte comparisons.
+`artifacts/original_mac_restore.json` records source ZIP metadata, file hashes,
+checksums and the split audit. Source ZIPs under `C:/Stuff/` were read only.
+The ignored `artifacts/pc_eval_dataset.yaml` points to this Windows dataset
+root, avoiding the old Mac paths. From the **repository root**, run:
+
+```powershell
+.\.tools\espdet311\Scripts\python.exe deer_classifier/evaluate_checkpoint.py `
+  --esp-detection .tools/esp-detection `
+  --checkpoint deer_classifier/artifacts/deer_espdet_pico/weights/best.pt `
+  --data deer_classifier/artifacts/pc_eval_dataset.yaml `
+  --device cpu --batch-size 1 `
+  --output deer_classifier/artifacts/pc_evaluation_best.json
+```
+
+The JSON report includes image-level accuracy, confusion counts, precision,
+recall and false-positive/missed-deer rates at each confidence threshold,
+including the firmware's 0.85 setting, alongside detector mAP. These results
+evaluate the float checkpoint. At confidence **0.85**, it found **0 of 517 deer**
+and correctly rejected all 85 negatives: accuracy **14.12%**, recall **0%**.
+At **0.25**, accuracy was **40.86%**, recall **33.85%** and false-positive rate
+**16.47%**. The maximum image score was 0.72522, and detector mAP50 was 0.30795.
+The current threshold misses every deer in this set; lowering it alone still
+leaves weak recall. Ordered camera sequences are needed to measure the
+2-of-3 trigger's behavior.
+
+For the retained quantized artifact, [`evaluate_espdl_qemu.py`](evaluate_espdl_qemu.py)
+and [`firmware/dataset_eval`](firmware/dataset_eval/README.md) provide a separate
+image-file evaluation path using ESP32-S3 QEMU and the camera firmware's
+detector wrapper. The application compiles, but emulator output failed a CPU
+golden-value numerical check. Its saturated scores are invalid for accuracy;
+the QEMU path is blocked until numerical correctness is established. QEMU
+timing is not board timing.
+
+[`recover_validation_data.py`](recover_validation_data.py) is an anonymous
+public-data fallback using verified ZIP byte ranges instead of downloading
+the full 4.6 GB archive. Only its directory/plan has been read; no public images
+or Idaho metadata have been downloaded. Its 517 selected deer images match
+the restored positive count, but its default 150 negatives would differ from
+the original final split's 85. Use the restored original validation set;
+fallback downloads are unnecessary and remain on hold.
 
 The target is the Adafruit ESP32-S3 TFT Feather (4 MB flash, 2 MB PSRAM) with the Adafruit OV5640 camera, powered from a 3.7 V LiPo. The embedded path in this folder uses Espressif's ESPDet-Pico detector and ESP-DL export, then turns repeated deer detections into a stable deer-present signal. Detecting a deer region in the frame is more suitable for the requested broad view than classifying the whole frame: birds and background can remain in view without turning the whole image into one scene label.
 

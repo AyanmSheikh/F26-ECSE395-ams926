@@ -30,8 +30,19 @@ def main() -> None:
     parser.add_argument("--optimizer", default="AdamW", help="Ultralytics optimizer, e.g. auto or AdamW")
     parser.add_argument("--learning-rate", type=float, default=0.0005,
                         help="Initial LR (used with a named optimizer; auto chooses its own LR)")
-    parser.add_argument("--warmup-epochs", type=float, default=0.5,
+    parser.add_argument("--warmup-epochs", type=float, default=3.0,
                         help="Warmup duration in epochs")
+    parser.add_argument("--warmup-bias-lr", type=float, default=0.0,
+                        help="Starting bias LR; zero avoids the SGD default's 0.1 spike with AdamW")
+    parser.add_argument("--mosaic", type=float, default=0.2, help="Mosaic augmentation probability")
+    parser.add_argument("--scale", type=float, default=0.25, help="Random image scale gain")
+    parser.add_argument("--cache", choices=("none", "ram", "disk"), default="none")
+    parser.add_argument("--close-mosaic", type=int, default=10, help="Disable mosaic for the final N epochs")
+    parser.add_argument("--cos-lr", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--amp", action=argparse.BooleanOptionalAction, default=False,
+                        help="Enable only after mixed-precision behavior is verified on the training backend")
+    parser.add_argument("--train-only", action="store_true",
+                        help="Save the selected checkpoint and provenance without exporting or publishing a model")
     parser.add_argument("--device", default="auto", help="auto selects CUDA, MPS, then CPU on the training host")
     parser.add_argument("--run-name", default=None, help="Unique run directory name (default: UTC timestamp)")
     parser.add_argument("--patience", type=int, default=8)
@@ -53,10 +64,12 @@ def main() -> None:
     try:
         validate_run_name(run_name)
         validate_settings(args.size, args.epochs, args.batch_size, args.patience,
-                          args.workers, args.learning_rate, args.warmup_epochs)
+                          args.workers, args.learning_rate, args.warmup_epochs,
+                          warmup_bias_lr=args.warmup_bias_lr, mosaic=args.mosaic, scale=args.scale,
+                          cache=args.cache, close_mosaic=args.close_mosaic)
     except ValueError as error:
         parser.error(str(error))
-    if args.output.exists() and not args.overwrite_output:
+    if args.output.exists() and not args.overwrite_output and not args.train_only:
         parser.error(f"model already exists: {args.output}; choose --output artifacts/candidate.espdl or explicitly --overwrite-output")
     if (args.output.parent / run_name).exists():
         parser.error(f"run directory already exists: {args.output.parent / run_name}; choose a new --run-name")
@@ -66,7 +79,7 @@ def main() -> None:
             parser.error(f"YOLO dataset folder not found: {folder}")
     if not args.pretrained.is_file():
         parser.error(f"checkpoint not found: {args.pretrained}")
-    if not calib_data.is_dir():
+    if not args.train_only and not calib_data.is_dir():
         parser.error(f"calibration image folder not found: {calib_data}")
 
     config = args.output.parent / f"{run_name}_dataset.yaml"
@@ -94,7 +107,16 @@ def main() -> None:
         "--patience", str(args.patience),
         "--workers", str(args.workers),
         "--seed", str(args.seed),
+        "--warmup-bias-lr", str(args.warmup_bias_lr),
+        "--mosaic", str(args.mosaic),
+        "--scale", str(args.scale),
+        "--cache", args.cache,
+        "--close-mosaic", str(args.close_mosaic),
+        "--cos-lr" if args.cos_lr else "--no-cos-lr",
+        "--amp" if args.amp else "--no-amp",
     ]
+    if args.train_only:
+        command.append("--train-only")
     if args.overwrite_output:
         command.append("--overwrite-output")
     command += ["--learning-rate", str(args.learning_rate)]

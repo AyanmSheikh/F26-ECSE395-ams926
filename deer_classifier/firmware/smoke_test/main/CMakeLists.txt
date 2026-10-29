@@ -2,6 +2,7 @@ idf_component_register(SRCS "app_main.cpp" INCLUDE_DIRS "."
                        PRIV_REQUIRES esp_timer esp_psram driver)
 
 set(model_file "${CMAKE_CURRENT_LIST_DIR}/../../../artifacts/deer.espdl")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${model_file}")
 if(NOT EXISTS "${model_file}")
     message(FATAL_ERROR "Missing deer_classifier/artifacts/deer.espdl")
 endif()

@@ -3,7 +3,28 @@
 from __future__ import annotations
 
 import sys
+import copy
 from pathlib import Path
+
+
+def restore_sppf_activations(target_model, source_model) -> int:
+    """Preserve parameter-free SPPF activations omitted from state dictionaries.
+
+    Recent Ultralytics constructs SPPF.cv1 without activation; legacy ESPDet cat
+    checkpoints use ReLU there. Deer checkpoints already trained with Identity
+    must retain Identity. Copy the source block rather than imposing either one.
+    """
+    target_modules = dict(target_model.named_modules())
+    restored = 0
+    for name, source in source_model.named_modules():
+        target = target_modules.get(name)
+        if (source.__class__.__name__ == "SPPF" and target is not None
+                and target.__class__.__name__ == "SPPF"
+                and hasattr(getattr(source, "cv1", None), "act")
+                and hasattr(getattr(target, "cv1", None), "act")):
+            target.cv1.act = copy.deepcopy(source.cv1.act)
+            restored += 1
+    return restored
 
 
 def load_esp_detection(repo: Path):
@@ -26,10 +47,11 @@ def load_esp_detection(repo: Path):
         source_state = source_model.float().state_dict()
         compatible = intersect_dicts(source_state, self.state_dict())
         self.load_state_dict(compatible, strict=False)
+        restored = restore_sppf_activations(self, source_model)
         if verbose:
             LOGGER.info(
                 f"Transferred {len(compatible)}/{len(self.state_dict())} "
-                "shape-compatible checkpoint tensors"
+                f"shape-compatible checkpoint tensors; preserved {restored} source SPPF activations"
             )
 
     BaseModel.load = load_matching_espdet_weights

@@ -8,11 +8,13 @@ connected to this computer. Immediate acceptance is a printed-deer camera
 smoke test with serial output; sound/light deterrence and photo capture remain
 later milestones.
 
-Only `artifacts/deer.espdl` survived in this checkout. The original Mac's
-dataset, `.pt` checkpoints and temporary Python/ESP-Detection environments are
-absent here. **No new training, held-out model evaluation or physical test has
-been performed on Windows.** Do not interpret the new host software tests as
-model accuracy or hardware success. The historical results below still apply.
+Initially only `artifacts/deer.espdl` survived in this checkout. The original
+Mac checkpoint and validation images have since been restored from the user's
+ZIPs, as detailed below. A clean Windows CPU evaluation now covers all 602
+held-out images. **At the deployed 0.85 threshold, the float checkpoint misses
+all 517 deer images.** No new training or physical test has been performed.
+Do not interpret host software tests as accuracy or hardware success. The new
+measurements are summarized in `EVALUATION.md`; historical results remain below.
 
 Implemented continuation:
 
@@ -56,16 +58,90 @@ pyserial. Build records live in `.tools/smoke-build.log` and
 ignored sdkconfig under `.tools/`, separate from the unconfirmed normal config.
 No device was flashed. Both the normal unconfigured build and the full camera
 and model configured build passed with ESP-IDF 5.4.2. The configured binary is
-1,853,456 bytes (about 1.77 MiB), leaving 55% of the application partition free.
+1,853,872 bytes (about 1.77 MiB) after the diagnostic additions, leaving 55% of
+the application partition free.
 This measures flash usage, not runtime PSRAM headroom. All 25 host unit tests
-pass. The configured build embeds the unchanged model; startup hardware and
+passed at the smoke-test milestone; the later PC-evaluation additions bring
+the passing total to 37. The configured build embeds the unchanged model; startup hardware and
 recognition checks have not run.
 
-Next: wire and connect the physical unit,
-configure/flash, run `smoke_check.py --port COMx`, and use observed scores to
-decide whether the experimental candidate can pass the print check. Restore
-training data/checkpoints for quantitative improvements. Do not claim the
-physical milestone passed until there is a real passing serial evidence log.
+### PC image evaluation continuation
+
+The user asked to run the existing model on the dataset and report
+classification accuracy, then supplied three original Mac Google Drive ZIPs
+under `C:/Stuff/drive-download-20261029T050355Z-1-{001,002,003}.zip`.
+They were read without modification. The workspace now has `best.pt`,
+`last.pt`, `best.onnx` under `artifacts/deer_espdet_pico/weights/`, the original
+`results.csv`, and the complete validation images/labels. Float-checkpoint
+evaluation completed successfully on all 602 images; its results follow.
+
+Restoration audit: **602 validation pairs = 517 deer images + 85 negatives**,
+703 deer boxes, no missing/orphan labels. The original ZIP directories contain
+2,729 unique training image names. Their 101 camera locations do not overlap
+the 29 validation locations; no image filename occurs in both splits. The
+historical "600 train / 150 validation negatives" describes the sampling
+request, not the final regrouped split. Sixty-five numbered Google Drive copies
+(four JPEGs and 61 labels) were proven byte-identical and preserved under
+ignored `.tools/original_mac_duplicate_copies/`, outside evaluation folders.
+Nine numbered training copies were also verified identical directly in the
+ZIPs and excluded from the filename audit. Source ZIP metadata and restored
+file SHA-256/CRC values are recorded in `artifacts/original_mac_restore.json`.
+
+An isolated evaluation environment is installed at repository-root
+`.tools/espdet311/`: Python 3.11.9, torch 2.2.0+cpu, Ultralytics 8.4.191.
+Dependency imports work. `.tools/esp-detection/` uses the original upstream
+revision `28de5902a357d99dd9a5db0f52905255641c5a78`.
+The bundled host Python above still lacks these ML dependencies; use the
+isolated interpreter. `artifacts/pc_eval_dataset.yaml` is the ignored local
+configuration for the Windows dataset root. The prepared-data layout and
+repository-root evaluation command are in `README.md`.
+
+- `artifacts/pc_evaluation_best.json`: restored `best.pt` SHA-256
+  `57d0481689a1920af67cec3b67d3db58e8bd2a2c59392f0d10acbc1b336fd156`.
+  At threshold 0.85, TP=0, FP=0, TN=85, FN=517: accuracy 14.12%, deer recall
+  0%, balanced accuracy 50%. At 0.25, TP=175, FP=14, TN=71, FN=342: accuracy
+  40.86%, recall 33.85%, precision 92.59%, false-positive rate 16.47%, balanced
+  accuracy 58.69%. Maximum score 0.7252197862; detector mAP50 0.307949,
+  mAP50–95 0.128958. The current threshold misses every held-out deer; reducing
+  it alone still leaves weak recall. See `EVALUATION.md` for reproducibility
+  and class-imbalance interpretation. No retraining or threshold change ran.
+- `artifacts/pc_evaluation_last.json`: the restored `last.pt` also has zero
+  deer recall and 14.12% accuracy at 0.85. At 0.25, TP=182, FP=9, TN=76,
+  FN=335: accuracy 42.86%, recall 35.20%, precision 95.29%, false-positive rate
+  10.59%, balanced accuracy 62.31%. Detector mAP50 0.290698 and mAP50–95
+  0.101031 are below `best.pt`; maximum score 0.6060715914. Both checkpoints
+  remain inadequate. `EVALUATION.md` records report/checkpoint hashes and
+  links `artifacts/pc_evaluation_confusion.png` and
+  `artifacts/pc_evaluation_examples.jpg`. No checkpoint was promoted.
+- `evaluate_checkpoint.py` can report float-checkpoint image-level accuracy,
+  TP/TN/FP/FN, precision, recall, false-positive/missed-deer rates at multiple
+  thresholds, and detector mAP. The original checkpoint and explicit
+  validation image/label pairs, including empty negative labels, are restored. Do not use
+  the upstream cat initialization to report deer accuracy.
+- `evaluate_espdl_qemu.py` and `firmware/dataset_eval/` prepare RGB frame files
+  and run the unchanged quantized artifact through the shared ESP32-S3
+  detector wrapper in QEMU. Firmware compilation passed, but invocation failed
+  a CPU golden-value check (expected -102, observed 127). Saturated 1.0 scores
+  are invalid; **QEMU numerical validation is blocked** and its scores must not
+  be reported as accuracy. Fix/pass that check before accepting logs, model/RGB
+  hashes and complete records. Emulated time is not physical latency/current.
+- `recover_validation_data.py` provides an anonymous HTTP-range ZIP fallback.
+  Directory-only live verification succeeded without downloading images or
+  Idaho metadata. The public ZIP is 4,633,755,888 bytes; the current preparation
+  rule selects 517 deer images, about 872 MB compressed, matching the restored
+  positive count. Its default 150 negatives would differ from the restored
+  final split's 85. Use the original recovered split; no public image download
+  is needed. The fallback remains available with reconstruction provenance.
+- Ten additional host tests cover range-download safety/sampling and QEMU
+  frame preparation/result validation and numerical-oracle guards, bringing the total to 37 passing host
+  tests. These tests measure software behavior, not recognition accuracy.
+
+Next: plan model improvements using these two clean checkpoint evaluations;
+neither meets the intended recognition behavior. Repair the
+quantized QEMU numerical check independently. Then wire/connect the physical
+unit, configure/flash, and run `smoke_check.py --port COMx`. The physical
+milestone requires a real passing serial evidence log before deterrence and
+photo-capture integration.
 
 ## Historical Mac handoff
 

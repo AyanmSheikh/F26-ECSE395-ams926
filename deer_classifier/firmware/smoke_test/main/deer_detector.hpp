@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cinttypes>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -45,7 +46,7 @@ class DeerDetector {
         return false;
       }
     }
-#ifdef CONFIG_DEER_RUN_MODEL_SELFTEST
+#if defined(CONFIG_DEER_RUN_MODEL_SELFTEST) || defined(DEER_EVAL_VERIFY_GOLDEN)
     const auto status = model_->test();
     std::printf("MODEL_SELFTEST %s\n", status == ESP_OK ? "PASS" : "FAIL");
     if (status != ESP_OK) return false;
@@ -64,9 +65,15 @@ class DeerDetector {
   // ESP-DL's model runner is fail-fast on allocation/operator errors. This
   // method validates returned scores; startup/runtime panics cannot emit a
   // successful deer event. An empty detection list is a valid zero score.
-  bool infer(const dl::image::img_t& image, float& score) {
+  bool infer(const dl::image::img_t& image, float& score, bool trace_tensors = false) {
     preprocessor_->preprocess(image);
+    if (trace_tensors) {
+      for (const auto& input : model_->get_inputs()) print_tensor("input", input.first.c_str(), input.second);
+    }
     model_->run();
+    if (trace_tensors) {
+      for (const auto& output : model_->get_outputs()) print_tensor("output", output.first.c_str(), output.second);
+    }
     postprocessor_->clear_result();
     postprocessor_->postprocess();
     score = 0.0f;
@@ -78,6 +85,35 @@ class DeerDetector {
   }
 
  private:
+  static void print_tensor(const char* phase, const char* name, dl::TensorBase* tensor) {
+    size_t elements = 1;
+    for (const auto dimension : tensor->shape) elements *= dimension;
+    if (tensor->dtype != dl::DATA_TYPE_INT8) {
+      std::printf("TENSOR phase=%s name=%s dtype=%d elements=%u unsupported_stats=1\n",
+                  phase, name, static_cast<int>(tensor->dtype), static_cast<unsigned>(elements));
+      return;
+    }
+    const int8_t* values = tensor->get_element_ptr<int8_t>();
+    int minimum = 127, maximum = -128;
+    int64_t sum = 0;
+    uint32_t checksum = 2166136261u;
+    size_t clipped_low = 0, clipped_high = 0;
+    for (size_t i = 0; i < elements; ++i) {
+      const int value = values[i];
+      minimum = std::min(minimum, value);
+      maximum = std::max(maximum, value);
+      sum += value;
+      checksum = (checksum ^ static_cast<uint8_t>(values[i])) * 16777619u;
+      clipped_low += value == -128;
+      clipped_high += value == 127;
+    }
+    std::printf("TENSOR phase=%s name=%s dtype=%d exponent=%d elements=%u min=%d max=%d sum=%" PRId64
+                " fnv1a=%08" PRIx32 " clipped_low=%u clipped_high=%u\n",
+                phase, name, static_cast<int>(tensor->dtype), tensor->get_exponent(),
+                static_cast<unsigned>(elements), minimum, maximum, sum, checksum,
+                static_cast<unsigned>(clipped_low), static_cast<unsigned>(clipped_high));
+  }
+
   // Destruction is the reverse of declaration: processors before their model.
   std::unique_ptr<dl::Model> model_;
   std::unique_ptr<dl::image::ImagePreprocessor> preprocessor_;
