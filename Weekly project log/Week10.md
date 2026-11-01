@@ -12,15 +12,45 @@
 
 
 
-# Team 1 (Bird Feeder): Internal Team Meeting Minutes, October 30, 2026
+# Week 10 Team Meeting Minutes
 
-**Time:** 3:00–3:30 PM · **Platform:** Zoom · **Minutes recorded by:** Joe Falkenburg, team secretary
+**Project:** Bird-feeder project
+
+**Date:** Friday, October 30, 2026
+
+**Time:** 1:00–1:45 PM
+
+**Platform:** Google Meet
 
 **Attendees (all present):** Joe Falkenburg, Ayan Sheikh, Emmett Gillespie, and Daniel Lim.
 
-- Rehearsed our presentation for the following week.
-- Planned to work on the Concept Selection and Gantt Chart resubmission, which was not yet complete.
-- Reviewed progress on the drawings, cardboard mockup, and electronics, including the path from motion sensing through camera capture and laptop recognition to the light and buzzer. With no usable camera images yet, getting capture or streaming working was next. We compared developing recognition from saved images during camera debugging with waiting for live images.
-- For the presentation, we considered a teammate judging whether a target was a deer and operating the light and buzzer by hand, giving the ESP32 simulated recognition results so it could control the outputs, or explaining the intended response using the drawings and mockup.
-- We discussed comparing camera tilt, the camera opening's size and position, and the post's height and distance from the feeder once the camera works. For the enclosure, we considered keeping boards removable with connector access and wire slack, rearranging the boards and breadboard so wiring stays clear of sensor openings, or making the enclosure larger. The recognition approach, demonstration method, and layout changes remained undecided.
-- Discussed checking that a confident deer identification at night activates the light and buzzer, and that they stay off for birds, people, unclear images, daytime, missing camera images, and late recognition results.
+## MVP direction and operating behavior
+
+We committed the immediate MVP to local image-area detection while retaining PIR and the camera. We set aside replacing them with ultrasonic or other range sensing. Ordinary detection and response should operate without the laptop, while the computer remains available for training and diagnostics. We agreed to continue AI work without holding up the detector, enclosure, or demonstration.
+
+We accepted the area rule as a practical proxy with limits: a person can trigger it, and a nearby small animal may appear large. We discussed calibration of a clear installed view, a provisional area cutoff, confirmation across multiple frames, reference refresh, camera aim, and capture delay as parts of making the behavior useful. Our demonstration must distinguish this filtering from deer identification.
+
+We agreed on night-only operation and a usable pause/resume control for the MVP. A deliberate pause must suppress deterrence despite qualifying images and must remain in effect when the nighttime window begins; operation resumes when Mr. Fong re-enables it. We also agreed that new detections should not restart or extend an active light/buzzer sequence. These requirements address separate stages of operation.
+
+## Model findings and next investigation
+
+We reviewed the completed confidence-threshold comparison: the high cutoff missed all held-out deer, and lowering it recovered some detections while still missing most. We also reviewed the confirmed numerical failure in the emulator, so its saturated scores could not be used as an accuracy result.
+
+We discussed the recovered model/data starting point, adequate deer and non-deer examples, training/validation separation, and fitting a compact model and image buffers on the ESP32. We considered data quality and evaluation methods alongside further training. Saved-image testing, matched float/INT8 execution, and actual camera input should be investigated separately to locate the failure.
+
+We agreed to a controlled float/INT8 comparison using the same checkpoint and consistent image preparation and decoding. Further training should preserve the baseline and produce a separately comparable candidate. Before we replace the practical detector with AI, it must repeatedly detect positive cases, remain quiet on relevant empty/non-deer cases, clear when the target is removed, and operate acceptably on the board. A controlled empty-scene → deer-picture → empty-scene procedure with repeated-frame confirmation provides a starting point; passing it would permit further integration, not establish field accuracy.
+
+## Enclosure and mounting
+
+We reviewed the printed base's height problem and considered retaining the full wired breadboard versus downsizing it. We discussed a taller top as a way to retain the base while gaining clearance. We did not decide either the board choice or the taller-top remedy in this meeting.
+
+We chose the removable external arrangement with two supports. Supporting both sides should limit rocking or rotation while allowing the enclosure to slide off for installation and servicing. We discussed sealing and gaskets, but whether sealing had to be completed for the immediate MVP remained undecided.
+
+## Tests, documentation, and coordinated work
+
+We agreed to a representative-load battery test of the complete assembly, including idle time, camera checks, illumination, and deterrent events. We should record elapsed runtime and event frequency so the result reflects how the device is used. We placed the real feeder-outcome comparison after the immediate MVP.
+
+We agreed to revise the prototype submission to give P1, P2, and P3 distinct explanations of purpose, test, learning, and subsequent change, with actual camera and response evidence alongside the AI attempt and practical detector.
+
+We planned a short video, photographs, and a narrated assembled-MVP walkthrough for weekend work. The walkthrough should show calibration, small-object rejection, a large-target response, and the fitted enclosure. Further AI investigation, unfinished controls, enclosure completion, and evidence preparation remain our collective work toward the MVP.
+
