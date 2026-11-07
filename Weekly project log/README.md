@@ -24,3 +24,4 @@ this table of contents, along with a brief description of what is included
 | [Week 8](Week8.md)| In lab testing, finishing prototypes 1, and 2, starting 3.  Verification and Validation Plan submittal, lab check in, brainstorming, architecture, and gantt chart resubmissions                   |
 | [Week 9](Week9.md)| Shortened week, worked on prototypes 1,2,3 dicussed presentation logistics, held team meeting                   |
 | [Week 10](Week10.md)| Midterm presentations; reviewed AI detection results and set MVP direction for local image-area detection, night-only operation, and pause/resume controls; discussed enclosure and mounting, battery testing, and prototype documentation |
+| [Week 11](Week11.md)| In lab time to work on MVP, P3 checkpoint revision and p1,2,3 resubmission, working on validation and verification for checkpoint on monday |
