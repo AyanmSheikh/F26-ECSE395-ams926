@@ -1,18 +1,18 @@
 # ECSE Week 12 Project Log
 
 ## 11/9 Independent Lab Time
-- Midterm Presentations, I had slides 4-7, I went a bit over time costing the team a point, but we ended up with a 40.5/45
+
+- Began Sound and Light Heuristic testing for tolerance of deterrence sequence, tested 1 subject, help write checkpoint document
 
 ## 11/11 Independent Lab Time
-- Midterm Presentations part II, sat and listened to other groups and their progress on their P1,2,3
+
+- Continued sound and light validation testing, adding more participant while controlling for the same variable, acheived larger sample size
 
 ## 11/13 Independent Lab Time
-- Discussed Meeting logistics for Sunday, check in with Roy, we made progress on the camera and detection system 3which made our project feasible enough to continue to pursue, we will not continue with inference based detection based off of our P3 results and will roll back to simple object based detection with the Ov5640 and ESP32-S3
 
+- Led team meeting. Checked in with Daniel who worked off site last class, integrated vibration sensor idea with entire system using ESP internal wifi, next steps include summitive validation tests and refill AB testing, working on priting the enclosrure for the vibration sensor and revision 2 of main enclosure
 
-
-
-# Week 12 Team Meeting Minutes (Joe F.)
+## Week 12 Team Meeting Minutes (Joe F.)
 
 **Project:** Bird-feeder project
 
@@ -79,5 +79,3 @@ We discussed the invitation already sent to Mr. Fong and the pending reply. The 
 We planned to prepare at least one interpretable figure from the participant results for the data-analysis checkpoint. We agreed to ask Professor Fu to clarify whether both the disturbance and refill studies should be included.
 
 We discussed ongoing revision work in response to Professor Fu's feedback.
-
-
