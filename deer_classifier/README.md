@@ -35,7 +35,7 @@ the deer print. It fails on missing frames, invalid scores, gate inconsistency,
 errors, resets or incomplete phases. Repeat with different deer and non-deer
 prints before proceeding to deterrence and photo-capture integration.
 
-Host checks use no ML dependencies:
+Host checks use no ML dependencies; the contract test of [`firmware/deer_presence.hpp`](firmware/deer_presence.hpp) also needs a Clang- or GCC-style C++17 compiler (`c++`, `clang++` or `g++` on the path, or `CXX` naming one):
 
 ```powershell
 python -m unittest discover -s tests -v
